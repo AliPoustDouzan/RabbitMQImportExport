@@ -9,7 +9,7 @@ ver 1401.04.21.1 :
 .Net 6
 
 # How to use?
-Set your config.json, Like this :
+1. Set your config.json, Like this :
 ```json
 {
   "HostName": "localhost",
@@ -23,6 +23,9 @@ Set your config.json, Like this :
   "Type": 1 //export=0/import=1
 }
 ```
-For export messages Set Type to 0 and for import messages set Type to 1.
-
-If you want delete the messages after exporting them set AutoAck to true.
+2. For export messages Set Type to 0
+3. If you want delete the messages after exporting them set AutoAck to true
+4. Run RabbitMQImportExport.exe
+5. Change Type to 1
+6. Set different queue (for test of course)
+7. Run RabbitMQImportExport.exe
