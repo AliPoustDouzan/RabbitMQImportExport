@@ -1,0 +1,11 @@
+{
+  "HostName": "localhost",
+  "UserName": "guest",
+  "Password": "guest",
+  "Port": 5672,
+  "VirtualHost": "/",
+  "Queue": "testqueue",
+  "MinMessageCount": 6,
+  "AutoAck": false,
+  "Type": 1 //export=0/import=1
+}
