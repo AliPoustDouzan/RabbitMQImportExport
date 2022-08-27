@@ -49,6 +49,7 @@ using (var connection = connectionFactory.CreateConnection())
         {
             var consumer = new EventingBasicConsumer(channel);
             List<string> messageList = new List<string>();
+            int messageCount = 0;
             consumer.Received += (model, ea) =>
             {
                 if (messageList.Count < ServiceConfig.Config.MinMessageCount)
@@ -56,6 +57,8 @@ using (var connection = connectionFactory.CreateConnection())
                     var bodyByte = ea.Body.ToArray();
                     var messageString = Encoding.UTF8.GetString(bodyByte);
                     messageList.Add(messageString);
+                    messageCount++;
+                    Console.WriteLine($"Total readed message : {messageCount}");
                     if (messageList.Count >= ServiceConfig.Config.MinMessageCount)
                     {
                         var exportModel = new ExportModel()

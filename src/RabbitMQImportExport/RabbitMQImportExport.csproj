@@ -5,8 +5,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>1401.04.21.1</AssemblyVersion>
-    <FileVersion>1401.04.21.1</FileVersion>
+    <AssemblyVersion>2022.08.27.1</AssemblyVersion>
+    <FileVersion>2022.08.27.1</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
