@@ -1,11 +1,12 @@
 {
   "HostName": "localhost",
-  "UserName": "guest",
-  "Password": "guest",
+  "UserName": "admin",
+  "Password": "1234",
   "Port": 5672,
-  "VirtualHost": "/",
-  "Queue": "testqueue",
-  "MinMessageCount": 6,
+  "VirtualHost": "ico",
+  "Queue": "ICO_RLC_Push_Export",
+  "MinMessageCount": 500000,
   "AutoAck": false,
-  "Type": 1 //export=0/import=1
+  "Type": 1, //export=0/import=1
+  "SplitCount": 100000
 }

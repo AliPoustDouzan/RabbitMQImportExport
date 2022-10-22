@@ -10,10 +10,12 @@ using RabbitToJSON.Model;
 using System.Text;
 
 using static RabbitMQImportExport.General.EnumList;
-const string exportFileName = "ExportData.json";
+const string exportFileName = "ExportData";
 Timer _timer = null;
 int _counter = 0;
 int _counterTotal = 0;
+int _splitCount = 0;
+bool _exit = false;
 var connectionFactory = new ConnectionFactory()
 {
     HostName = ServiceConfig.Config.HostName,
@@ -33,23 +35,41 @@ using (var connection = connectionFactory.CreateConnection())
                  arguments: null);
         if (ServiceConfig.Config.Type == EnmType.Import)
         {
-            var jsonString = File.ReadAllText(exportFileName);
-            //Start timer
-            _timer = new Timer(TimerHandler, null, 0, 1000);
-            var ExportModel = JsonConvert.DeserializeObject<ExportModel>(jsonString);
-            foreach (var messageString in ExportModel.MessageList)
+            while (true)
             {
-                var bodyByte = Encoding.UTF8.GetBytes(messageString);
-                channel.BasicPublish(exchange: "",
-                                     routingKey: ServiceConfig.Config.Queue,
-                                     basicProperties: null,
-                                     body: bodyByte);
-                _counter++;
-                _counterTotal++;
+                _splitCount++;
+                var fileName = exportFileName + _splitCount.ToString() + ".json";
+                var fileExists = File.Exists(fileName);
+                if (fileExists == false)
+                {
+                    if (_exit == false)
+                    {
+                        _exit = true;
+                        _timer = null;
+                        TimerHandler(null);
+                        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Press a key to exit");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Read data from {fileName}");
+                    var jsonString = File.ReadAllText(fileName);
+                    //Start timer
+                    _timer = new Timer(TimerHandler, null, 0, 1000);
+                    var ExportModel = JsonConvert.DeserializeObject<ExportModel>(jsonString);
+                    foreach (var messageString in ExportModel.MessageList)
+                    {
+                        var bodyByte = Encoding.UTF8.GetBytes(messageString);
+                        channel.BasicPublish(exchange: "",
+                                             routingKey: ServiceConfig.Config.Queue,
+                                             basicProperties: null,
+                                             body: bodyByte);
+                        _counter++;
+                        _counterTotal++;
+                    }
+                }
+
             }
-            _timer = null;
-            TimerHandler(null);
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Press a key to exit");
         }
         else
         {
@@ -59,26 +79,36 @@ using (var connection = connectionFactory.CreateConnection())
             _timer = new Timer(TimerHandler, null, 0, 1000);
             consumer.Received += (model, ea) =>
             {
-                if (messageList.Count < ServiceConfig.Config.MinMessageCount)
+                if (_counterTotal < ServiceConfig.Config.MinMessageCount)
                 {
                     var bodyByte = ea.Body.ToArray();
                     var messageString = Encoding.UTF8.GetString(bodyByte);
                     messageList.Add(messageString);
                     _counter++;
                     _counterTotal++;
-                    if (messageList.Count >= ServiceConfig.Config.MinMessageCount)
+
+                    if (_counterTotal >= ServiceConfig.Config.MinMessageCount || messageList.Count >= ServiceConfig.Config.SplitCount)
                     {
+                        _splitCount++;
                         _timer = null;
                         TimerHandler(null);
-                        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Saving to file start");
+                        var fileName = exportFileName + _splitCount.ToString() + ".json";
+                        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Saving to {fileName} start");
                         var exportModel = new ExportModel()
                         {
                             MessageList = messageList
                         };
                         string exportModelJSON = JsonConvert.SerializeObject(exportModel);
-                        File.WriteAllText(exportFileName, exportModelJSON);
-                        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | {messageList.Count} Messages exported to {exportFileName}");
-                        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Press a key to exit");
+                        File.WriteAllText(fileName, exportModelJSON);
+                        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | {messageList.Count} Messages exported to {fileName}");
+                        if (_counterTotal >= ServiceConfig.Config.MinMessageCount)
+                        {
+                            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Press a key to exit");
+                        }
+                        else
+                        {
+                            messageList = new List<string>();
+                        }
                     }
                 }
             };
@@ -91,13 +121,16 @@ using (var connection = connectionFactory.CreateConnection())
 }
 void TimerHandler(object state)
 {
-    if (ServiceConfig.Config.Type == EnmType.Import)
+    if (_exit == false)
     {
-        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Push {_counter} message per/second, Total : {_counterTotal}");
+        if (ServiceConfig.Config.Type == EnmType.Import)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Push {_counter} message per/second, Total : {_counterTotal}");
+        }
+        else
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Read {_counter} message per/second, Total : {_counterTotal}");
+        }
+        _counter = 0;
     }
-    else
-    {
-        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Read {_counter} message per/second, Total : {_counterTotal}");
-    }
-    _counter = 0;
 }
