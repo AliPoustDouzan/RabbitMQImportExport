@@ -8,6 +8,7 @@ using RabbitMQImportExport.Service;
 using RabbitToJSON.Model;
 
 using System.Text;
+using System.Threading.Channels;
 
 using static RabbitMQImportExport.General.EnumList;
 const string exportFileName = "ExportData";
@@ -47,6 +48,7 @@ using (var connection = connectionFactory.CreateConnection())
                         _exit = true;
                         _timer = null;
                         TimerHandler(null);
+                        Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Read {_counter} message per/second, Total : {_counterTotal}");
                         Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-HH:mm:ss")} | Press a key to exit");
                     }
                 }
@@ -57,13 +59,17 @@ using (var connection = connectionFactory.CreateConnection())
                     //Start timer
                     _timer = new Timer(TimerHandler, null, 0, 1000);
                     var ExportModel = JsonConvert.DeserializeObject<ExportModel>(jsonString);
+                    var basicProperties = channel.CreateBasicProperties();
+                    basicProperties.Persistent = true;
                     foreach (var messageString in ExportModel.MessageList)
                     {
                         var bodyByte = Encoding.UTF8.GetBytes(messageString);
                         channel.BasicPublish(exchange: "",
                                              routingKey: ServiceConfig.Config.Queue,
-                                             basicProperties: null,
-                                             body: bodyByte);
+                                             basicProperties: basicProperties,
+                                             body: bodyByte,
+                                             mandatory: true);
+                        channel.ConfirmSelect();
                         _counter++;
                         _counterTotal++;
                     }
