@@ -3,8 +3,8 @@
   "UserName": "admin",
   "Password": "1234",
   "Port": 5672,
-  "VirtualHost": "ico",
-  "Queue": "ICO_RLC_Push_Export",
+  "VirtualHost": "/",
+  "Queue": "Test",
   "MinMessageCount": 500000,
   "AutoAck": false,
   "Type": 1, //export=0/import=1
