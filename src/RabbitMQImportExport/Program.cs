@@ -8,7 +8,6 @@ using RabbitMQImportExport.Service;
 using RabbitToJSON.Model;
 
 using System.Text;
-using System.Threading.Channels;
 
 using static RabbitMQImportExport.General.EnumList;
 const string exportFileName = "ExportData";
@@ -16,6 +15,7 @@ Timer _timer = null;
 int _counter = 0;
 int _counterTotal = 0;
 int _splitCount = 0;
+int _confirmCount = 0;
 bool _exit = false;
 var connectionFactory = new ConnectionFactory()
 {
@@ -69,7 +69,12 @@ using (var connection = connectionFactory.CreateConnection())
                                              basicProperties: basicProperties,
                                              body: bodyByte,
                                              mandatory: true);
-                        channel.ConfirmSelect();
+                        _confirmCount++;
+                        if (_confirmCount >= 100)
+                        {
+                            channel.ConfirmSelect();
+                            _confirmCount = 0;
+                        }
                         _counter++;
                         _counterTotal++;
                     }
