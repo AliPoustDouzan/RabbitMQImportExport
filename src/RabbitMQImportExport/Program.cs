@@ -70,7 +70,7 @@ using (var connection = connectionFactory.CreateConnection())
                                              body: bodyByte,
                                              mandatory: true);
                         _confirmCount++;
-                        if (_confirmCount >= 100)
+                        if (_confirmCount >= 1000)
                         {
                             channel.ConfirmSelect();
                             _confirmCount = 0;
